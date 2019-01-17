@@ -1,0 +1,1 @@
+export default class UnexpectedStateException extends Error {}

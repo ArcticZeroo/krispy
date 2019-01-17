@@ -2,6 +2,9 @@ import Collection from '@arcticzeroo/collection/dist';
 import InjectionType from './enum/InjectorType';
 import Class from './models/Class';
 import ClassInjectable from './models/ClassInjectable';
+import UnresolvableDependencyException from './exception/UnresolvableDependencyException';
+import CannotRegisterDependencyException from './exception/CannotRegisterDependencyException';
+import UnexpectedStateException from './exception/UnexpectedStateException';
 
 export default class Injector {
     private static _globalInjector: Injector;
@@ -15,41 +18,56 @@ export default class Injector {
         return Injector._globalInjector;
     }
 
-    private static getSymbol<T>(item: Class<T>): symbol {
+    private static getSymbol(item: Function): symbol {
         return Symbol.for(item.name);
+    }
+
+    private static isInheritedFrom<T>(base: Function, inherited: Class<T>): boolean {
+        let proto = Object.getPrototypeOf(inherited);
+
+        while (proto !== Function.prototype) {
+            if (proto === base) {
+                return true;
+            }
+
+            proto = Object.getPrototypeOf(proto);
+        }
+
+        return false;
     }
 
     constructor() {
         this._items = new Collection<symbol, ClassInjectable<any>>();
     }
 
-    private throwUnresolvable(message) {
+    public add<TBase, TInherited extends TBase>(base: Function, inherited: Class<TInherited>, type: InjectionType): void {
+        if (!Injector.isInheritedFrom(base, inherited)) {
+            throw new CannotRegisterDependencyException(`Class ${inherited.name} does not inherit from ${base.name}`);
+        }
 
-    }
-
-    public add<TBase, TInherited extends TBase>(base: Class<TBase>, inherited: Class<TInherited>, type: InjectionType): void {
         this._items.set(Injector.getSymbol(base), { create: inherited, type });
     }
 
-    public addTransient<TBase, TInherited extends TBase>(base: Class<TBase>, inherited: Class<TInherited>): void {
+    public addTransient<TBase, TInherited extends TBase>(base: Function, inherited: Class<TInherited>): void {
+
         this.add(base, inherited, InjectionType.transient);
     }
 
-    public addSingleton<TBase, TInherited extends TBase>(base: Class<TBase>, inherited: Class<TInherited>): void {
+    public addSingleton<TBase, TInherited extends TBase>(base: Function, inherited: Class<TInherited>): void {
         this.add(base, inherited, InjectionType.singleton);
     }
 
-    public resolve<T>(base: Class<T>): T | null {
+    public resolve<T>(base: Function): T {
         const identifier = Injector.getSymbol(base);
 
         if (!this._items.has(identifier)) {
-            return null;
+            throw new UnresolvableDependencyException(`Dependency ${base.name} is not registered`);
         }
 
         const item: ClassInjectable<T> | undefined = this._items.get(identifier);
 
         if (item == null) {
-            return null;
+            throw new UnresolvableDependencyException(`Registered dependency ${base.name} is null`);
         }
 
         if (item.type === InjectionType.transient) {
@@ -68,6 +86,6 @@ export default class Injector {
             return instance;
         }
 
-        throw new TypeError(`Unexpected State: Injection type was ${item.type}`);
+        throw new UnexpectedStateException(`Unexpected State: Injection type was ${item.type}`);
     }
 }
