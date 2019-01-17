@@ -4,7 +4,7 @@
   "description": "Basic synchronous dependency injector",
   "main": "dist/index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha dist/test/injector.test.js"
   },
   "repository": {
     "type": "git",
