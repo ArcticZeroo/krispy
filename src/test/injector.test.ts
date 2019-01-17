@@ -4,20 +4,89 @@ import UnresolvableDependencyException from '../lib/exception/UnresolvableDepend
 import CannotRegisterDependencyException from '../lib/exception/CannotRegisterDependencyException';
 import ClassInjectable from '../lib/models/ClassInjectable';
 import UnexpectedStateException from '../lib/exception/UnexpectedStateException';
+import InjectorUtil from '../lib/util/InjectorUtil';
 
 function getInjectorData(injector: Injector): Map<symbol, ClassInjectable<any>> {
     return injector['_items'];
 }
 
-function getSymbolForInjector(base: Function): symbol {
-    return Injector['getSymbol'](base);
-}
+describe('InjectorUtil', function () {
+    describe('getSymbol', function () {
+        it('returns a symbol for a class', function () {
+            class Base {}
+
+            const symbol = InjectorUtil.getSymbol(Base);
+
+            expect(typeof symbol).to.equal('symbol');
+        });
+
+        it('always returns the same symbol for the same class', function () {
+            class Base {}
+            class NotBase {}
+
+            const baseSymbolA = InjectorUtil.getSymbol(Base);
+            const baseSymbolB = InjectorUtil.getSymbol(Base);
+            const notBaseSymbol = InjectorUtil.getSymbol(NotBase);
+
+            expect(baseSymbolA).to.equal(baseSymbolB);
+            expect(baseSymbolA).to.not.equal(notBaseSymbol);
+        });
+    });
+
+    describe('isInheritedFrom', function () {
+        it('returns false when the classes are not descended from one another', function () {
+            class ClassA {}
+            class ClassB {}
+
+            expect(InjectorUtil.isInheritedFrom(ClassA, ClassB)).to.be.false;
+        });
+
+        it('returns true when the inherited class is a direct descendant', function () {
+            class Base {}
+            class Inherited extends Base {}
+
+            expect(InjectorUtil.isInheritedFrom(Base, Inherited)).to.be.true;
+        });
+
+        it('returns true when the inherited class is a second-level descendant', function () {
+            class BaseA {}
+            class BaseB extends BaseA {}
+            class Inherited extends BaseB {}
+
+            expect(InjectorUtil.isInheritedFrom(BaseB, Inherited)).to.be.true;
+            expect(InjectorUtil.isInheritedFrom(BaseA, Inherited)).to.be.true;
+        });
+
+        it('returns false when the prototype of the inherited is null', function () {
+            class Base {}
+            class Inherited extends Base {}
+
+            Reflect.setPrototypeOf(Inherited, null);
+
+            expect(InjectorUtil.isInheritedFrom(Base, Inherited)).to.be.false;
+        });
+    });
+});
 
 describe('Injector', function () {
     let injector: Injector;
 
     beforeEach(function () {
         injector = new Injector();
+    });
+
+    describe('global', function () {
+        it('does not instantiate global upon module loading', function () {
+            expect(Injector['_globalInjector'] == null, 'global injector was instantiated already').to.be.true;
+        });
+
+        it('returns an instance of the Injector upon first call', function () {
+            expect(Injector.global).to.be.an.instanceOf(Injector);
+        });
+
+        it('always returns the same global instance', function () {
+            expect(Injector.global).to.equal(Injector.global);
+        });
     });
 
     describe('add', function () {
@@ -28,7 +97,7 @@ describe('Injector', function () {
             injector.addSingleton(Base, Sub);
 
             const injectorData = getInjectorData(injector);
-            const dataKey = getSymbolForInjector(Base);
+            const dataKey = InjectorUtil.getSymbol(Base);
 
             expect(injectorData.has(dataKey), 'Injector data did not add dependency to data').to.be.true;
         });
@@ -113,7 +182,7 @@ describe('Injector', function () {
             class Base {}
 
             const injectorData = getInjectorData(injector);
-            const dataKey = getSymbolForInjector(Base);
+            const dataKey = InjectorUtil.getSymbol(Base);
 
             // @ts-ignore - We know null is not a valid type to be setting, but this is the test
             injectorData.set(dataKey, null);
@@ -128,7 +197,7 @@ describe('Injector', function () {
             injector.addSingleton(Base, Sub);
 
             const injectorData = getInjectorData(injector);
-            const dataKey = getSymbolForInjector(Base);
+            const dataKey = InjectorUtil.getSymbol(Base);
 
             // @ts-ignore - Don't care if it can be null, other tests should have checked for that
             injectorData.get(dataKey).type = -1;

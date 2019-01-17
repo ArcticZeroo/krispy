@@ -4,6 +4,7 @@ import ClassInjectable from './models/ClassInjectable';
 import UnresolvableDependencyException from './exception/UnresolvableDependencyException';
 import CannotRegisterDependencyException from './exception/CannotRegisterDependencyException';
 import UnexpectedStateException from './exception/UnexpectedStateException';
+import InjectorUtil from './util/InjectorUtil';
 
 export default class Injector {
     private static _globalInjector: Injector;
@@ -17,34 +18,16 @@ export default class Injector {
         return Injector._globalInjector;
     }
 
-    private static getSymbol(item: Function): symbol {
-        return Symbol.for(item.name);
-    }
-
-    private static isInheritedFrom<T>(base: Function, inherited: Class<T>): boolean {
-        let proto = Object.getPrototypeOf(inherited);
-
-        while (proto !== Function.prototype) {
-            if (proto === base) {
-                return true;
-            }
-
-            proto = Object.getPrototypeOf(proto);
-        }
-
-        return false;
-    }
-
     constructor() {
         this._items = new Map<symbol, ClassInjectable<any>>();
     }
 
     public add<TBase, TInherited extends TBase>(base: Function, inherited: Class<TInherited>, type: InjectionType): void {
-        if (!Injector.isInheritedFrom(base, inherited)) {
+        if (!InjectorUtil.isInheritedFrom(base, inherited)) {
             throw new CannotRegisterDependencyException(`Class ${inherited.name} does not inherit from ${base.name}`);
         }
 
-        this._items.set(Injector.getSymbol(base), { create: inherited, type });
+        this._items.set(InjectorUtil.getSymbol(base), { create: inherited, type });
     }
 
     public addTransient<TBase, TInherited extends TBase>(base: Function, inherited: Class<TInherited>): void {
@@ -57,7 +40,7 @@ export default class Injector {
     }
 
     public resolve<T>(base: Function): T {
-        const identifier = Injector.getSymbol(base);
+        const identifier = InjectorUtil.getSymbol(base);
 
         if (!this._items.has(identifier)) {
             throw new UnresolvableDependencyException(`Dependency ${base.name} is not registered`);
