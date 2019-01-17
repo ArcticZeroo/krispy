@@ -1,4 +1,3 @@
-import Collection from '@arcticzeroo/collection/dist';
 import InjectionType from './enum/InjectorType';
 import Class from './models/Class';
 import ClassInjectable from './models/ClassInjectable';
@@ -8,7 +7,7 @@ import UnexpectedStateException from './exception/UnexpectedStateException';
 
 export default class Injector {
     private static _globalInjector: Injector;
-    private readonly _items: Collection<symbol, ClassInjectable<any>>;
+    private readonly _items: Map<symbol, ClassInjectable<any>>;
 
     public static get global(): Injector {
         if (!Injector._globalInjector) {
@@ -37,7 +36,7 @@ export default class Injector {
     }
 
     constructor() {
-        this._items = new Collection<symbol, ClassInjectable<any>>();
+        this._items = new Map<symbol, ClassInjectable<any>>();
     }
 
     public add<TBase, TInherited extends TBase>(base: Function, inherited: Class<TInherited>, type: InjectionType): void {

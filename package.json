@@ -24,10 +24,12 @@
   },
   "homepage": "https://github.com/arcticzeroo/krispy#readme",
   "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.5",
     "@types/node": "^10.12.18",
+    "chai": "^4.2.0",
+    "mocha": "^5.2.0",
     "typescript": "^3.2.2"
   },
-  "dependencies": {
-    "@arcticzeroo/collection": "^1.1.0"
-  }
+  "dependencies": {}
 }
