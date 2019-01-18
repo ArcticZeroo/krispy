@@ -10,6 +10,7 @@ It works pretty ok.
 - Inheritance checking
 - Transient and Singleton resolution
 - Requires very little setup (1 line to register a base/subclass, 1 line to resolve)
+- Zero production dependencies
 
 ## Basic Usage (TypeScript):
 

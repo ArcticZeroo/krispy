@@ -4,7 +4,8 @@
   "description": "Basic synchronous dependency injector",
   "main": "dist/index.js",
   "scripts": {
-    "test": "mocha dist/test/injector.test.js"
+    "test": "mocha dist/test/injector.test.js",
+    "prepare": "tsc"
   },
   "repository": {
     "type": "git",
@@ -13,8 +14,10 @@
   "keywords": [
     "dependency",
     "injection",
-    "dependency",
-    "injection",
+    "injector",
+    "dependency injection",
+    "dependency injector",
+    "syringe",
     "typescript"
   ],
   "author": "spencer@frozor.io",
