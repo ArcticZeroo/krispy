@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/ArcticZeroo/krispy.svg?branch=master)](https://travis-ci.com/ArcticZeroo/krispy)
+
 # krispy
 
 A pretty simple dependency injector.

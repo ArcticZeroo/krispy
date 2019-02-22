@@ -8,7 +8,7 @@ import InjectorUtil from './util/InjectorUtil';
 
 export default class Injector {
     private static _globalInjector: Injector;
-    private readonly _items: Map<symbol, ClassInjectable<any>>;
+    private readonly _items: WeakMap<any, ClassInjectable<any>>;
 
     public static get global(): Injector {
         if (!Injector._globalInjector) {
@@ -19,37 +19,35 @@ export default class Injector {
     }
 
     constructor() {
-        this._items = new Map<symbol, ClassInjectable<any>>();
+        this._items = new WeakMap<any, ClassInjectable<any>>();
     }
 
-    public add<TBase, TInherited extends TBase>(base: Function, inherited: Class<TInherited>, type: InjectionType): void {
+    public add<TBase>(base: TBase, inherited: Class<TBase>, type: InjectionType): void {
         if (!InjectorUtil.isInheritedFrom(base, inherited)) {
-            throw new CannotRegisterDependencyException(`Class ${inherited.name} does not inherit from ${base.name}`);
+            throw new CannotRegisterDependencyException(`Class ${inherited} does not inherit from ${base}`);
         }
 
-        this._items.set(InjectorUtil.getSymbol(base), { create: inherited, type });
+        this._items.set(base, { create: inherited, type });
     }
 
-    public addTransient<TBase, TInherited extends TBase>(base: Function, inherited: Class<TInherited>): void {
+    public addTransient<TBase>(base: TBase, inherited: Class<TBase>): void {
 
         this.add(base, inherited, InjectionType.transient);
     }
 
-    public addSingleton<TBase, TInherited extends TBase>(base: Function, inherited: Class<TInherited>): void {
+    public addSingleton<TBase>(base: TBase, inherited: Class<TBase>): void {
         this.add(base, inherited, InjectionType.singleton);
     }
 
-    public resolve<T>(base: Function): T {
-        const identifier = InjectorUtil.getSymbol(base);
-
-        if (!this._items.has(identifier)) {
-            throw new UnresolvableDependencyException(`Dependency ${base.name} is not registered`);
+    public resolve<T>(base: T): T {
+        if (!this._items.has(base)) {
+            throw new UnresolvableDependencyException(`Dependency ${base} is not registered`);
         }
 
-        const item: ClassInjectable<T> | undefined = this._items.get(identifier);
+        const item: ClassInjectable<T> | undefined = this._items.get(base);
 
         if (item == null) {
-            throw new UnresolvableDependencyException(`Registered dependency ${base.name} is null`);
+            throw new UnresolvableDependencyException(`Registered dependency ${base} is null`);
         }
 
         if (item.type === InjectionType.transient) {

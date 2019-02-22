@@ -1,11 +1,7 @@
 import Class from '../models/Class';
 
 export default abstract class InjectorUtil {
-    public static getSymbol(item: Function) {
-        return Symbol.for(item.name);
-    }
-
-    public static isInheritedFrom<T>(base: Function, inherited: Class<T>): boolean {
+    public static isInheritedFrom<TBase>(base: TBase, inherited: Class<TBase>): boolean {
         let proto = Object.getPrototypeOf(inherited);
 
         while (proto && proto !== Function.prototype) {

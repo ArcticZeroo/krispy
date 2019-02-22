@@ -6,33 +6,11 @@ import ClassInjectable from '../lib/models/ClassInjectable';
 import UnexpectedStateException from '../lib/exception/UnexpectedStateException';
 import InjectorUtil from '../lib/util/InjectorUtil';
 
-function getInjectorData(injector: Injector): Map<symbol, ClassInjectable<any>> {
+function getInjectorData(injector: Injector): WeakMap<any, ClassInjectable<any>> {
     return injector['_items'];
 }
 
 describe('InjectorUtil', function () {
-    describe('getSymbol', function () {
-        it('returns a symbol for a class', function () {
-            class Base {}
-
-            const symbol = InjectorUtil.getSymbol(Base);
-
-            expect(typeof symbol).to.equal('symbol');
-        });
-
-        it('always returns the same symbol for the same class', function () {
-            class Base {}
-            class NotBase {}
-
-            const baseSymbolA = InjectorUtil.getSymbol(Base);
-            const baseSymbolB = InjectorUtil.getSymbol(Base);
-            const notBaseSymbol = InjectorUtil.getSymbol(NotBase);
-
-            expect(baseSymbolA).to.equal(baseSymbolB);
-            expect(baseSymbolA).to.not.equal(notBaseSymbol);
-        });
-    });
-
     describe('isInheritedFrom', function () {
         it('returns false when the classes are not descended from one another', function () {
             class ClassA {}
@@ -97,9 +75,8 @@ describe('Injector', function () {
             injector.addSingleton(Base, Sub);
 
             const injectorData = getInjectorData(injector);
-            const dataKey = InjectorUtil.getSymbol(Base);
 
-            expect(injectorData.has(dataKey), 'Injector data did not add dependency to data').to.be.true;
+            expect(injectorData.has(Base), 'Injector data did not add dependency to data').to.be.true;
         });
 
         it('throws CannotRegisterDependencyException when subclass does not inherit from base class', function () {
@@ -117,7 +94,7 @@ describe('Injector', function () {
 
              injector.addSingleton(Base, Sub);
 
-             const sub: Base = injector.resolve<Base>(Base);
+             const sub: Base = injector.resolve(Base);
 
              expect(sub).to.be.an.instanceOf(Base);
              expect(sub).to.be.an.instanceOf(Sub);
@@ -175,17 +152,16 @@ describe('Injector', function () {
         it('throws UnresolvableDependencyException when dependency is not registered', function () {
             class Base {}
 
-            expect(() => injector.resolve<Base>(Base)).to.throw(UnresolvableDependencyException);
+            expect(() => injector.resolve(Base)).to.throw(UnresolvableDependencyException);
         });
 
         it('throws UnresolvableDependencyInjection when dependency data is null' , function () {
             class Base {}
 
             const injectorData = getInjectorData(injector);
-            const dataKey = InjectorUtil.getSymbol(Base);
 
             // @ts-ignore - We know null is not a valid type to be setting, but this is the test
-            injectorData.set(dataKey, null);
+            injectorData.set(Base, null);
 
             expect(() => injector.resolve(Base)).to.throw(UnresolvableDependencyException);
         });
@@ -197,10 +173,9 @@ describe('Injector', function () {
             injector.addSingleton(Base, Sub);
 
             const injectorData = getInjectorData(injector);
-            const dataKey = InjectorUtil.getSymbol(Base);
 
             // @ts-ignore - Don't care if it can be null, other tests should have checked for that
-            injectorData.get(dataKey).type = -1;
+            injectorData.get(Base).type = -1;
 
             expect(() => injector.resolve(Base)).to.throw(UnexpectedStateException);
         });
