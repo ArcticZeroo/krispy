@@ -8,7 +8,7 @@ import InjectorUtil from './util/InjectorUtil';
 
 export default class Injector {
     private static _globalInjector: Injector;
-    private readonly _items: WeakMap<any, ClassInjectable<any>>;
+    private readonly _items: WeakMap<Function, ClassInjectable<any>>;
 
     public static get global(): Injector {
         if (!Injector._globalInjector) {
@@ -19,35 +19,35 @@ export default class Injector {
     }
 
     constructor() {
-        this._items = new WeakMap<any, ClassInjectable<any>>();
+        this._items = new WeakMap<Function, ClassInjectable<any>>();
     }
 
-    public add<TBase>(base: TBase, inherited: Class<TBase>, type: InjectionType): void {
+    public add<T>(base: Function, inherited: Class<T>, type: InjectionType): void {
         if (!InjectorUtil.isInheritedFrom(base, inherited)) {
-            throw new CannotRegisterDependencyException(`Class ${inherited} does not inherit from ${base}`);
+            throw new CannotRegisterDependencyException(`Class ${inherited.name} does not inherit from ${base.name}`);
         }
 
         this._items.set(base, { create: inherited, type });
     }
 
-    public addTransient<TBase>(base: TBase, inherited: Class<TBase>): void {
+    public addTransient<T>(base: Function, inherited: Class<T>): void {
 
         this.add(base, inherited, InjectionType.transient);
     }
 
-    public addSingleton<TBase>(base: TBase, inherited: Class<TBase>): void {
+    public addSingleton<T>(base: Function, inherited: Class<T>): void {
         this.add(base, inherited, InjectionType.singleton);
     }
 
-    public resolve<T>(base: T): T {
+    public resolve<T>(base: Function): T {
         if (!this._items.has(base)) {
-            throw new UnresolvableDependencyException(`Dependency ${base} is not registered`);
+            throw new UnresolvableDependencyException(`Dependency ${base.name} is not registered`);
         }
 
         const item: ClassInjectable<T> | undefined = this._items.get(base);
 
         if (item == null) {
-            throw new UnresolvableDependencyException(`Registered dependency ${base} is null`);
+            throw new UnresolvableDependencyException(`Registered dependency ${base.name} is null`);
         }
 
         if (item.type === InjectionType.transient) {
